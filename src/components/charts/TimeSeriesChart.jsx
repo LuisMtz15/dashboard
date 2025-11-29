@@ -7,7 +7,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from "recharts";
 import { useMemo, useState } from "react";
 import { SIGNALS } from "../../config/signals";
@@ -33,7 +32,7 @@ function formatTimestamp(ts) {
   }
 }
 
-// clave de fecha (YYYY-MM-DD) a partir del timestamp
+// clave de fecha (YYYY-MM-DD)
 function getDateKey(ts) {
   if (!ts) return null;
   const d = new Date(ts);
@@ -44,7 +43,7 @@ function getDateKey(ts) {
   return `${year}-${month}-${day}`;
 }
 
-// para mostrar la fecha en bonito
+// para mostrar fecha bonita
 function formatDateLabel(dateKey) {
   if (!dateKey || dateKey === "all") return "Todas";
   const [y, m, d] = dateKey.split("-");
@@ -64,7 +63,7 @@ export default function TimeSeriesChart({ data, selectedIds }) {
     .map((id) => SIGNALS[id])
     .filter(Boolean);
 
-  // 📅 fechas disponibles en los datos
+  // 📅 fechas disponibles
   const availableDates = useMemo(() => {
     if (!data || data.length === 0) return ["all"];
 
@@ -75,11 +74,11 @@ export default function TimeSeriesChart({ data, selectedIds }) {
     });
 
     const list = Array.from(set);
-    list.sort(); // ascendente
+    list.sort();
     return ["all", ...list];
   }, [data]);
 
-  // 🔍 fecha + rango de tiempo
+  // 🔍 filtro por fecha + rango de tiempo
   const filteredData = useMemo(() => {
     if (!data || data.length === 0) return [];
 
@@ -170,14 +169,14 @@ export default function TimeSeriesChart({ data, selectedIds }) {
       </div>
 
       {/* Gráfica */}
-      <ResponsiveContainer width="100%" height="75%">
+      <ResponsiveContainer width="100%" height="70%">
         <LineChart
           data={filteredData}
           margin={{
-            top: 16,
+            top: 12,
             right: 20,
             left: 0,
-            bottom: 40, // más espacio para la leyenda y ticks
+            bottom: 20, // menos abajo porque ya no hay Legend dentro
           }}
         >
           <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
@@ -185,7 +184,7 @@ export default function TimeSeriesChart({ data, selectedIds }) {
             dataKey="timestamp"
             tickFormatter={formatTimestamp}
             tick={{ fontSize: 9 }}
-            minTickGap={25} // evita que se amontonen
+            minTickGap={25}
           />
           <YAxis
             tick={{ fontSize: 10 }}
@@ -199,17 +198,6 @@ export default function TimeSeriesChart({ data, selectedIds }) {
               value,
               SIGNALS[name]?.label || name,
             ]}
-          />
-
-          {/* Leyenda compacta abajo */}
-          <Legend
-            formatter={(value) => SIGNALS[value]?.label || value}
-            verticalAlign="bottom"
-            align="center"
-            wrapperStyle={{
-              fontSize: 11,
-              paddingTop: 4,
-            }}
           />
 
           {activeSignals.map((sig) => (
@@ -226,6 +214,24 @@ export default function TimeSeriesChart({ data, selectedIds }) {
           ))}
         </LineChart>
       </ResponsiveContainer>
+
+      {/* 👇 Leyenda propia, fuera del gráfico */}
+      <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
+        {activeSignals.map((sig) => (
+          <div
+            key={sig.id}
+            className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-1"
+          >
+            <span
+              className="h-2 w-2 rounded-full"
+              style={{ backgroundColor: sig.color }}
+            />
+            <span className="text-slate-700">
+              {sig.label}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
