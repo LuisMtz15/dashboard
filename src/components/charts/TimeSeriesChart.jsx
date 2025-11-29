@@ -38,7 +38,6 @@ function getDateKey(ts) {
   if (!ts) return null;
   const d = new Date(ts);
   if (Number.isNaN(d.getTime())) return null;
-  // formato estable tipo 2025-11-27
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
@@ -65,7 +64,7 @@ export default function TimeSeriesChart({ data, selectedIds }) {
     .map((id) => SIGNALS[id])
     .filter(Boolean);
 
-  // 📅 calcular fechas disponibles en los datos
+  // 📅 fechas disponibles en los datos
   const availableDates = useMemo(() => {
     if (!data || data.length === 0) return ["all"];
 
@@ -76,15 +75,14 @@ export default function TimeSeriesChart({ data, selectedIds }) {
     });
 
     const list = Array.from(set);
-    list.sort(); // ascendente por fecha
+    list.sort(); // ascendente
     return ["all", ...list];
   }, [data]);
 
-  // 🔍 filtramos datos según fecha + rango de tiempo
+  // 🔍 fecha + rango de tiempo
   const filteredData = useMemo(() => {
     if (!data || data.length === 0) return [];
 
-    // 1) Filtrar por fecha (si no es "all")
     let base = data;
     if (selectedDate !== "all") {
       base = data.filter((row) => {
@@ -95,7 +93,6 @@ export default function TimeSeriesChart({ data, selectedIds }) {
 
     if (!base || base.length === 0) return [];
 
-    // 2) Filtrar por rango de tiempo dentro de esa fecha
     if (rangeId === "all") return base;
 
     const option = RANGE_OPTIONS.find((r) => r.id === rangeId);
@@ -118,7 +115,8 @@ export default function TimeSeriesChart({ data, selectedIds }) {
   }, [data, rangeId, selectedDate]);
 
   return (
-    <div className="p-4 rounded-xl border bg-white shadow-sm h-93">
+    <div className="p-4 rounded-xl border bg-white shadow-sm h-96">
+      {/* Encabezado + controles */}
       <div className="flex flex-col gap-3 mb-3 md:flex-row md:items-center md:justify-between">
         <div>
           <h3 className="text-sm font-semibold text-slate-900">
@@ -151,7 +149,7 @@ export default function TimeSeriesChart({ data, selectedIds }) {
             </select>
           </div>
 
-          {/* Controles de rango de tiempo */}
+          {/* Controles de rango */}
           <div className="flex items-center gap-1 rounded-full bg-slate-100 px-1 py-0.5">
             {RANGE_OPTIONS.map((opt) => (
               <button
@@ -171,21 +169,23 @@ export default function TimeSeriesChart({ data, selectedIds }) {
         </div>
       </div>
 
-      <ResponsiveContainer width="100%" height="80%">
+      {/* Gráfica */}
+      <ResponsiveContainer width="100%" height="75%">
         <LineChart
           data={filteredData}
           margin={{
-            top: 30,
+            top: 16,
             right: 20,
-            left: -10,
-            bottom: 0,
+            left: 0,
+            bottom: 40, // más espacio para la leyenda y ticks
           }}
         >
           <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
           <XAxis
             dataKey="timestamp"
             tickFormatter={formatTimestamp}
-            tick={{ fontSize: 10 }}
+            tick={{ fontSize: 9 }}
+            minTickGap={25} // evita que se amontonen
           />
           <YAxis
             tick={{ fontSize: 10 }}
@@ -201,12 +201,15 @@ export default function TimeSeriesChart({ data, selectedIds }) {
             ]}
           />
 
-          {/* Leyenda siempre visible */}
+          {/* Leyenda compacta abajo */}
           <Legend
             formatter={(value) => SIGNALS[value]?.label || value}
             verticalAlign="bottom"
             align="center"
-            wrapperStyle={{ fontSize: 12 }}
+            wrapperStyle={{
+              fontSize: 11,
+              paddingTop: 4,
+            }}
           />
 
           {activeSignals.map((sig) => (
