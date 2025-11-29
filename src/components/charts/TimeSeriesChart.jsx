@@ -178,12 +178,13 @@ export default function TimeSeriesChart({ data, selectedIds }) {
           />
 
           <XAxis
-            dataKey="timestamp"
-            tickFormatter={formatTimestamp}
-            tick={{ fontSize: isMobile ? 8 : 10 }}
-            interval={isMobile ? "preserveStartEnd" : 0}
-            minTickGap={isMobile ? 35 : 5}
-          />
+  dataKey="timestamp"
+  tickFormatter={formatTimestamp}
+  tick={{ fontSize: isMobile ? 8 : 10 }}
+  interval={isMobile ? "preserveStartEnd" : "auto"}
+  minTickGap={isMobile ? 35 : 25}
+  padding={{ left: 5, right: 5 }}
+/>
 
           <YAxis
             tick={{ fontSize: isMobile ? 8 : 10 }}
