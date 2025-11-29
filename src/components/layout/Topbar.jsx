@@ -3,9 +3,9 @@ export default function Topbar() {
   return (
     <header className="w-full flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-white/70 backdrop-blur">
       <div>
-        <h2 className="text-lg font-semibold text-slate-900">
-          Overview de métricas
-        </h2>
+          <h2 className="text-lg font-semibold text-slate-900">
+            Métricas y Señales PLC
+          </h2>
         <p className="text-xs text-slate-500">
           Datos provenientes de DynamoDB
         </p>
