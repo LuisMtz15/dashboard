@@ -82,7 +82,7 @@ export default function AlertStopModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b">
+        <div className="flex items-center justify-between px-5 py-3">
           <div>
             <h2 className="text-sm font-semibold text-slate-900">
               Alertas y paros del proceso
@@ -102,7 +102,7 @@ export default function AlertStopModal({
         </div>
 
         {/* Tabs */}
-        <div className="px-5 pt-3 flex gap-2 border-b">
+        <div className="px-5 pt-3 flex gap-2">
           <button
             type="button"
             disabled={!hasAlerts}
