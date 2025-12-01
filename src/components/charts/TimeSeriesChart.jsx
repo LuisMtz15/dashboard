@@ -86,32 +86,49 @@ export default function TimeSeriesChart({ data, selectedIds }) {
   const filteredData = useMemo(() => {
     if (!data || data.length === 0) return [];
 
+    // 1) Filtrar por fecha (si no es "all")
     let base = data;
     if (selectedDate !== "all") {
-      base = data.filter((row) => getDateKey(row.timestamp) === selectedDate);
+      base = data.filter((row) => {
+        const key = getDateKey(row.timestamp);
+        return key === selectedDate;
+      });
     }
 
     if (!base || base.length === 0) return [];
 
-    if (rangeId === "all") return base;
+    // 🔹 Ordenar SIEMPRE por timestamp (de menor a mayor)
+    const sortedBase = [...base].sort((a, b) => {
+      const ta = new Date(a.timestamp).getTime();
+      const tb = new Date(b.timestamp).getTime();
+      // si algo viene raro, lo mandamos al final
+      if (Number.isNaN(ta) && Number.isNaN(tb)) return 0;
+      if (Number.isNaN(ta)) return 1;
+      if (Number.isNaN(tb)) return -1;
+      return ta - tb;
+    });
+
+    // 2) Filtrar por rango de tiempo dentro de esa fecha
+    if (rangeId === "all") return sortedBase;
 
     const option = RANGE_OPTIONS.find((r) => r.id === rangeId);
-    if (!option?.ms) return base;
+    if (!option?.ms) return sortedBase;
 
-    const validTimestamps = base
+    const validTimestamps = sortedBase
       .map((d) => new Date(d.timestamp))
       .filter((d) => !Number.isNaN(d.getTime()));
 
-    if (validTimestamps.length === 0) return base;
+    if (validTimestamps.length === 0) return sortedBase;
 
     const maxTs = Math.max(...validTimestamps.map((d) => d.getTime()));
     const cutoff = maxTs - option.ms;
 
-    return base.filter((row) => {
+    return sortedBase.filter((row) => {
       const t = new Date(row.timestamp).getTime();
-      return !Number.isNaN(t) && t >= cutoff;
+      if (Number.isNaN(t)) return false;
+      return t >= cutoff;
     });
-  }, [data, selectedDate, rangeId]);
+  }, [data, rangeId, selectedDate]);
 
   return (
     <div className="p-4 rounded-xl border bg-white shadow-sm h-93">
