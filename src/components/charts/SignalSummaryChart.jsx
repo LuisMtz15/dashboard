@@ -65,7 +65,7 @@ export default function SignalSummaryChart({ data }) {
   }, []);
 
   return (
-    <div className="p-4 rounded-xl border bg-white shadow-sm h-67">
+    <div className="p-4 rounded-xl border bg-white shadow-sm h-64">
       <div className="flex items-center justify-between mb-3">
         <div>
           <h3 className="text-sm font-semibold text-slate-900">
@@ -107,7 +107,7 @@ export default function SignalSummaryChart({ data }) {
           <Bar
             dataKey="count"
             name="Activaciones"
-            barSize={isMobile ? 60 : 200} // barras un poco más finas solo en móvil
+            barSize={isMobile ? 60 : 180} // barras un poco más finas solo en móvil
           >
             {summary.map((item) => (
               <Cell
