@@ -18,7 +18,7 @@ export default function Login() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // 👁️ estado para mostrar/ocultar contraseña
+  // estado para mostrar/ocultar contraseña
   const [showPassword, setShowPassword] = useState(false);
 
   // sólo mostramos el captcha cuando hay usuario y contraseña
@@ -127,15 +127,15 @@ export default function Login() {
                 <Turnstile
                   siteKey={SITE_KEY}
                   onSuccess={(token) => {
-                    // ✅ guardamos token cuando Cloudflare diga "ok"
+                    // guardamos token cuando Cloudflare diga "ok"
                     setCfToken(token);
                   }}
                   onExpire={() => {
-                    // ⏰ si expira, ahora sí lo limpiamos
+                    // si expira, ahora sí lo limpiamos
                     setCfToken("");
                   }}
                   onError={() => {
-                    // ❌ si hay error, limpiamos también
+                    // si hay error, limpiamos también
                     setCfToken("");
                   }}
                   options={{
@@ -144,9 +144,7 @@ export default function Login() {
                 />
               </div>
             ) : (
-              <p className="text-[11px] text-slate-400">
-                Escribe tu usuario y contraseña para mostrar la verificación
-                de seguridad.
+              <p className="text-xs text-slate-500">
               </p>
             )
           ) : (

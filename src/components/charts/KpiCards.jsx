@@ -301,9 +301,8 @@ export default function KpiCards({ data, onShowAlertStopDetail }) {
         </div>
 
         <p className="mt-1 text-[11px] text-slate-400 leading-snug">
-          Alerta — Sensor capacitivo en 1 demasiado tiempo con botón de inicio en 1. <br />
-          Paro — Bloques donde el botón de inicio está en 0
-          (p. ej. true,true,true,false,false,false,true = 1 paro).
+          Alerta — Boton activo - Sensores estáticos. <br />
+          Paro — Boton inactivo - Sensores estáticos.
         </p>
       </button>
     </div>
