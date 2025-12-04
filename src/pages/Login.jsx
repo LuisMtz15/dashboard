@@ -26,15 +26,13 @@ export default function Login() {
     SITE_KEY && username.trim() && password.trim()
   );
 
-  // si cambian usuario o password, reseteamos el token del captcha
+  // ⬇️ YA NO borramos el token aquí
   function handleUsernameChange(e) {
     setUsername(e.target.value);
-    setCfToken("");
   }
 
   function handlePasswordChange(e) {
     setPassword(e.target.value);
-    setCfToken("");
   }
 
   async function handleSubmit(e) {
@@ -51,7 +49,9 @@ export default function Login() {
 
       if (!cfToken) {
         throw new Error(
-          "Por favor confirma que no eres un robot (Turnstile)."
+          "No se pudo obtener la verificación de Cloudflare. " +
+            "Si ves la palomita verde pero sale este mensaje, puede que tu navegador o un bloqueador esté " +
+            "interfiriendo con el captcha. Prueba desactivar el bloqueo para este sitio o usar otro navegador."
         );
       }
 
@@ -127,7 +127,16 @@ export default function Login() {
                 <Turnstile
                   siteKey={SITE_KEY}
                   onSuccess={(token) => {
-                    setCfToken(token); // token de Cloudflare Turnstile
+                    // ✅ guardamos token cuando Cloudflare diga "ok"
+                    setCfToken(token);
+                  }}
+                  onExpire={() => {
+                    // ⏰ si expira, ahora sí lo limpiamos
+                    setCfToken("");
+                  }}
+                  onError={() => {
+                    // ❌ si hay error, limpiamos también
+                    setCfToken("");
                   }}
                   options={{
                     theme: "dark",
@@ -136,7 +145,8 @@ export default function Login() {
               </div>
             ) : (
               <p className="text-[11px] text-slate-400">
-                
+                Escribe tu usuario y contraseña para mostrar la verificación
+                de seguridad.
               </p>
             )
           ) : (
@@ -151,10 +161,10 @@ export default function Login() {
             </p>
           )}
 
-          
           <button
             type="submit"
-            disabled={submitting || !cfToken}
+            // puedes volver a poner `|| !cfToken` aquí si quieres
+            disabled={submitting}
             className="w-full inline-flex items-center justify-center rounded-lg bg-sky-500 hover:bg-sky-400 disabled:bg-slate-600 text-sm font-medium text-white px-4 py-2.5 transition"
           >
             {submitting ? "Entrando..." : "Iniciar sesión"}
