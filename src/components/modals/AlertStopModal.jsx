@@ -27,9 +27,30 @@ function formatDateTime(ts) {
   return `${fecha} · ${hora}`;
 }
 
+// helper para sacar el timestamp “principal” de un evento
+function getEventTimestamp(e) {
+  return (
+    e.timestampStart || // paros nuevos
+    e.timestamp || // alertas viejas
+    e.timestampEnd ||
+    e.timestamp_bridge ||
+    null
+  );
+}
+
+// helper para mostrar el índice de un evento
+function getEventIndexLabel(e) {
+  if (e.indexStart != null && e.indexEnd != null) {
+    if (e.indexStart === e.indexEnd) return String(e.indexStart);
+    return `${e.indexStart}–${e.indexEnd}`;
+  }
+  if (e.index != null) return String(e.index);
+  return "-";
+}
+
 function buildChartData(events) {
   return (events || []).map((e, idx) => {
-    const ts = e.timestamp || e.timestamp_bridge || null;
+    const ts = getEventTimestamp(e);
     const d = ts ? new Date(ts) : null;
     const label = d
       ? d.toLocaleTimeString("es-MX", {
@@ -42,7 +63,7 @@ function buildChartData(events) {
       timestamp: ts,
       timeLabel: label,
       value: 1,
-      plc: e.plc || "", // "1200" / "1500" (por si queremos usarlo luego)
+      plc: e.plc || "", // "1200" / "1500"
     };
   });
 }
@@ -138,8 +159,8 @@ export default function AlertStopModal({
             </h3>
             <p className="text-[11px] text-slate-500">
               {isAlertTab
-                ? "Se detectan cuando el botón de inicio del PLC está en 1 y los sensores de carrera y capacitivo no cambian entre registros."
-                : "Se detectan cuando el botón de inicio está en 0 y los sensores de carrera/capacitivo permanecen estáticos (paro intencional del proceso)."}
+                ? "Se detectan cuando el sensor capacitivo está en 1 demasiado tiempo con el botón de inicio en 1."
+                : "Se detectan como bloques donde el botón de inicio del PLC está en 0 (un bloque de falsos = un paro)."}
             </p>
           </div>
 
@@ -201,26 +222,30 @@ export default function AlertStopModal({
               </p>
             ) : (
               <ul className="space-y-1 text-xs text-slate-700">
-                {latest.map((e, idx) => (
-                  <li
-                    key={`${e.timestamp ?? "no-ts"}-${idx}`}
-                    className="flex items-start justify-between rounded-lg border bg-white px-3 py-2"
-                  >
-                    <div>
-                      <p className="font-medium">
-                        {isAlertTab ? "Alerta" : "Paro"} #
-                        {latest.length - idx} · PLC
-                        {e.plc || "?"}
+                {latest.map((e, idx) => {
+                  const ts = getEventTimestamp(e);
+                  const idxLabel = getEventIndexLabel(e);
+                  return (
+                    <li
+                      key={`${ts ?? "no-ts"}-${idx}`}
+                      className="flex items-start justify-between rounded-lg border bg-white px-3 py-2"
+                    >
+                      <div>
+                        <p className="font-medium">
+                          {isAlertTab ? "Alerta" : "Paro"} #
+                          {latest.length - idx} · PLC
+                          {e.plc || "?"}
+                        </p>
+                        <p className="text-[11px] text-slate-500">
+                          {formatDateTime(ts)}
+                        </p>
+                      </div>
+                      <p className="text-[11px] text-slate-400">
+                        idx: {idxLabel}
                       </p>
-                      <p className="text-[11px] text-slate-500">
-                        {formatDateTime(e.timestamp)}
-                      </p>
-                    </div>
-                    <p className="text-[11px] text-slate-400">
-                      idx: {e.index}
-                    </p>
-                  </li>
-                ))}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>

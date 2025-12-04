@@ -1,7 +1,8 @@
 // src/components/charts/KpiCards.jsx
 
-// mínimo de registros consecutivos con sensores estáticos
-const MIN_STREAK = 6;
+// umbrales para considerar ALERTA por tiempo excesivo en el sensor capacitivo
+const MAX_CAP_OK_1500 = 8; // si pasa de 8 muestras en 1 con botón ON → alerta
+const MAX_CAP_OK_1200 = 8; // si pasa de 5 muestras en 1 con botón ON → alerta
 
 function formatNumber(value) {
   if (value == null || Number.isNaN(value)) return "-";
@@ -72,119 +73,143 @@ export default function KpiCards({ data, onShowAlertStopDetail }) {
   const alertEvents = [];
   const stopEvents = [];
 
-  let prev = null;
-
-  let streakStatic1500 = 0;
-  let streakStatic1200 = 0;
-
+  // rachas para ALERTAS (tiempo excesivo en sensor capacitivo con botón ON)
+  let alertStreak1500 = 0;
+  let alertStreak1200 = 0;
   let inAlertStreak1500 = false;
-  let inStopStreak1500 = false;
   let inAlertStreak1200 = false;
-  let inStopStreak1200 = false;
+
+  // banderas para bloques de PARO (botón en 0)
+  let inStopBlock1500 = false;
+  let inStopBlock1200 = false;
+  let lastStopEventIndex1500 = null;
+  let lastStopEventIndex1200 = null;
 
   sortedData.forEach((row, index) => {
-    if (prev) {
-      const inicio1200 = Number(row.inicio_plc1200) === 1;
-      const inicio1500 = Number(row.inicio_plc1500) === 1;
+    const timestamp = row.timestamp || row.timestamp_bridge || null;
 
-      const sensoresStatic1500 =
-        row.sensor_carrera_1500 === prev.sensor_carrera_1500 &&
-        row.sensor_capacitivo_1500 === prev.sensor_capacitivo_1500;
+    const inicio1500 = Number(row.inicio_plc1500) === 1;
+    const inicio1200 = Number(row.inicio_plc1200) === 1;
 
-      const sensoresStatic1200 =
-        row.sensor_carrera_1200 === prev.sensor_carrera_1200 &&
-        row.sensor_capacitivo_1200 === prev.sensor_capacitivo_1200;
+    const cap1500 = Number(row.sensor_capacitivo_1500) === 1;
+    const cap1200 = Number(row.sensor_capacitivo_1200) === 1;
 
-      const timestamp = row.timestamp || row.timestamp_bridge || null;
+    // ---------- ALERTAS (CAPACITIVO EN 1 DEMASIADO TIEMPO) ----------
 
-      // ---------- PLC 1500 ----------
-      if (sensoresStatic1500) {
-        streakStatic1500 += 1;
-      } else {
-        streakStatic1500 = 0;
-        inAlertStreak1500 = false;
-        inStopStreak1500 = false;
-      }
-
-      if (streakStatic1500 >= MIN_STREAK) {
-        if (inicio1500) {
-          // 🔴 ALERTA 1500: botón ON, sensores sin cambio por N registros
-          if (!inAlertStreak1500) {
-            alerts++;
-            inAlertStreak1500 = true;
-            inStopStreak1500 = false;
-            alertEvents.push({
-              index,
-              timestamp,
-              plc: "1500",
-              raw: row,
-              type: "alert",
-              streak: streakStatic1500,
-            });
-          }
-        } else {
-          // 🟠 PARO 1500: botón OFF, sensores sin cambio por N registros
-          if (!inStopStreak1500) {
-            plannedStops++;
-            inStopStreak1500 = true;
-            inAlertStreak1500 = false;
-            stopEvents.push({
-              index,
-              timestamp,
-              plc: "1500",
-              raw: row,
-              type: "stop",
-              streak: streakStatic1500,
-            });
-          }
-        }
-      }
-
-      // ---------- PLC 1200 ----------
-      if (sensoresStatic1200) {
-        streakStatic1200 += 1;
-      } else {
-        streakStatic1200 = 0;
-        inAlertStreak1200 = false;
-        inStopStreak1200 = false;
-      }
-
-      if (streakStatic1200 >= MIN_STREAK) {
-        if (inicio1200) {
-          // 🔴 ALERTA 1200
-          if (!inAlertStreak1200) {
-            alerts++;
-            inAlertStreak1200 = true;
-            inStopStreak1200 = false;
-            alertEvents.push({
-              index,
-              timestamp,
-              plc: "1200",
-              raw: row,
-              type: "alert",
-              streak: streakStatic1200,
-            });
-          }
-        } else {
-          // 🟠 PARO 1200
-          if (!inStopStreak1200) {
-            plannedStops++;
-            inStopStreak1200 = true;
-            inAlertStreak1200 = false;
-            stopEvents.push({
-              index,
-              timestamp,
-              plc: "1200",
-              raw: row,
-              type: "stop",
-              streak: streakStatic1200,
-            });
-          }
-        }
-      }
+    // PLC 1500: botón ON + sensor capacitivo en 1
+    if (inicio1500 && cap1500) {
+      alertStreak1500 += 1;
+    } else {
+      alertStreak1500 = 0;
+      inAlertStreak1500 = false;
     }
 
-    prev = row;
+    if (alertStreak1500 > MAX_CAP_OK_1500 && !inAlertStreak1500) {
+      alerts++;
+      inAlertStreak1500 = true;
+      alertEvents.push({
+        index,
+        timestamp,
+        plc: "1500",
+        raw: row,
+        type: "alert",
+        streak: alertStreak1500,
+        reason:
+          "Sensor capacitivo 1500 en 1 demasiado tiempo con botón de inicio en 1.",
+      });
+    }
+
+    // PLC 1200: botón ON + sensor capacitivo en 1
+    if (inicio1200 && cap1200) {
+      alertStreak1200 += 1;
+    } else {
+      alertStreak1200 = 0;
+      inAlertStreak1200 = false;
+    }
+
+    if (alertStreak1200 > MAX_CAP_OK_1200 && !inAlertStreak1200) {
+      alerts++;
+      inAlertStreak1200 = true;
+      alertEvents.push({
+        index,
+        timestamp,
+        plc: "1200",
+        raw: row,
+        type: "alert",
+        streak: alertStreak1200,
+        reason:
+          "Sensor capacitivo 1200 en 1 demasiado tiempo con botón de inicio en 1.",
+      });
+    }
+
+    // ---------- PAROS (BLOQUES DE BOTÓN OFF) ----------
+    // Aquí aplicamos tu lógica:
+    // true, true, true, false, false, false, true, false, false → 2 paros
+
+    // PLC 1500
+    if (!inicio1500) {
+      if (!inStopBlock1500) {
+        // entramos a un nuevo bloque de paro
+        inStopBlock1500 = true;
+        plannedStops++;
+
+        const ev = {
+          indexStart: index,
+          indexEnd: index, // se irá actualizando
+          timestampStart: timestamp,
+          timestampEnd: timestamp,
+          plc: "1500",
+          raw: row,
+          type: "stop",
+          count: 1, // cuántos registros incluye el bloque
+          reason: "Botón de inicio 1500 en 0 (inicio de un paro del PLC 1500).",
+        };
+
+        stopEvents.push(ev);
+        lastStopEventIndex1500 = stopEvents.length - 1;
+      } else if (lastStopEventIndex1500 != null) {
+        // seguimos dentro del mismo bloque de paro
+        const ev = stopEvents[lastStopEventIndex1500];
+        ev.indexEnd = index;
+        ev.timestampEnd = timestamp;
+        ev.count += 1;
+      }
+    } else {
+      // botón volvió a 1 → terminamos bloque de paro (si existía)
+      inStopBlock1500 = false;
+      lastStopEventIndex1500 = null;
+    }
+
+    // PLC 1200
+    if (!inicio1200) {
+      if (!inStopBlock1200) {
+        inStopBlock1200 = true;
+        plannedStops++;
+
+        const ev = {
+          indexStart: index,
+          indexEnd: index,
+          timestampStart: timestamp,
+          timestampEnd: timestamp,
+          plc: "1200",
+          raw: row,
+          type: "stop",
+          count: 1,
+          reason: "Botón de inicio 1200 en 0 (inicio de un paro del PLC 1200).",
+        };
+
+        stopEvents.push(ev);
+        lastStopEventIndex1200 = stopEvents.length - 1;
+      } else if (lastStopEventIndex1200 != null) {
+        const ev = stopEvents[lastStopEventIndex1200];
+        ev.indexEnd = index;
+        ev.timestampEnd = timestamp;
+        ev.count += 1;
+      }
+    } else {
+      inStopBlock1200 = false;
+      lastStopEventIndex1200 = null;
+    }
   });
 
   const hasAlerts = alerts > 0;
@@ -276,8 +301,9 @@ export default function KpiCards({ data, onShowAlertStopDetail }) {
         </div>
 
         <p className="mt-1 text-[11px] text-slate-400 leading-snug">
-          Alerta — Botón de inicio de cada PLC en 1 y sensores estáticos por varios registros. <br />
-          Paro — Botón de inicio en 0 y sensores estáticos por varios registros.
+          Alerta — Sensor capacitivo en 1 demasiado tiempo con botón de inicio en 1. <br />
+          Paro — Bloques donde el botón de inicio está en 0
+          (p. ej. true,true,true,false,false,false,true = 1 paro).
         </p>
       </button>
     </div>
