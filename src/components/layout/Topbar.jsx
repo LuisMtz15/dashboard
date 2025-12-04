@@ -14,7 +14,7 @@ export default function Topbar() {
   };
 
   return (
-    <header className="w-full flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-white/70 backdrop-blur">
+    <header className="w-full flex items-center justify-between px-4 py-3 border-b border-slate-200  backdrop-blur bg-slate-100">
       <div>
         <h2 className="text-lg font-semibold text-slate-900">
           Métricas y Señales PLC
