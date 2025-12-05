@@ -36,7 +36,7 @@ export const SIGNALS = {
 
   sensor_capacitivo_1500: {
     id: "sensor_capacitivo_1500",
-    label: "Sensor capacitivo 1500",
+    label: "Sensor inductivo 1500",
     group: "PLC1500",
     type: "Sensor",
     color: "#F27C22", // naranja fuerte
@@ -69,7 +69,7 @@ export const SIGNALS = {
 
   sensor_capacitivo_1200: {
     id: "sensor_capacitivo_1200",
-    label: "Sensor capacitivo 1200",
+    label: "Sensor inductivo 1200",
     group: "PLC1200",
     type: "Sensor",
     color: "#AB47BC", // morado suave muy distinguible
